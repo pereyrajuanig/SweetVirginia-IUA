@@ -26,10 +26,10 @@ export default function Productos() {
                 : productos.filter((p) => !p.disponible)
 
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full max-w-4xl mx-auto">
 
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                 <div>
                     <h1 className="text-2xl font-semibold text-[#3D2B1F]">Mis productos</h1>
                     <p className="text-[#A08070] text-sm mt-1">{productos.length} productos en total</p>
@@ -56,7 +56,7 @@ export default function Productos() {
             </div>
 
             {/* Grid de productos */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {productosFiltrados.map((producto) => (
                     <div
                         key={producto.id}

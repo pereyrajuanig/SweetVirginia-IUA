@@ -1,8 +1,10 @@
 // barra lateral del dashboard, muestra el logo, el nombre del usuario y los links de navegación
 
+import { useState } from "react" // useState se usa para manejar el estado de la barra lateral, como el menu desplegable en dispositivos moviles
 import { NavLink, useNavigate } from "react-router-dom" // navLink se usa para los links de navegacion para aplicar estilos activos
 import { useAuth } from "@/context/AuthContext" // useAuth se usa para obtener la informacion del usuario y la funcion de logout, así como para determinar si es admin o emprendedora
 import { Button } from "@/components/ui/button" // Button se usa para el boton de logout
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet" // Sheet se usa para el menu desplegable en dispositivos moviles
 
 // Links de navegacion para emprendedora y admin
 const navEmprendedora = [
@@ -17,25 +19,21 @@ const navAdmin = [
     { path: "/admin/usuarios", label: "Usuarios" },
 ]
 
-// Componente Sidebar que se muestra en el dashboard, con el logo, el nombre del usuario y los links de navegacion según su rol (admin o emprendedora)
-export default function Sidebar() {
+function NavContent({ onClose }) { // componente para el contenido del menu desplegable en dispositivos moviles, recibe una funcion onClose para cerrar el menu al hacer click en un link
     const { usuario, logout, esAdmin } = useAuth()
     const navigate = useNavigate()
-
-    const nav = esAdmin ? navAdmin : navEmprendedora // Se elige el set de links segun el rol del usuario
+    const nav = esAdmin ? navAdmin : navEmprendedora
 
     function handleLogout() { // funcion para cerrar sesion la cual llama a la funcion de logout del contexto y luego redirige al login
         logout()
         navigate("/login")
+        onClose?.()
     }
 
-    // Se renderiza la barra lateral con el logo, el nombre del usuario y los links de navegacion, 
-    // aplicando estilos activos a los links segun la ruta actual, y un boton de logout al final
+    // se renderiza el logo, el nombre del usuario y los links de navegacion, aplicando estilos activos a los links y un boton para cerrar sesion al final
     return (
-        <aside className="w-56 min-h-screen bg-[#1E1A17] border-r border-[#3A2F26] flex flex-col">
+        <div className="flex flex-col h-full bg-[#1E1A17]">
 
-            {/* seccion del logo con un circulo con las iniciales de sweet virginia y el nombre debajo */}
-            {/* aplicando estilos para que se vea bien en la barra lateral */}
             {/* Logo */}
             <div className="flex flex-col items-center py-8 border-b border-[#3A2F26]">
                 <div className="w-12 h-12 rounded-full border border-[#C49A6C] flex items-center justify-center mb-2">
@@ -44,8 +42,6 @@ export default function Sidebar() {
                 <p className="text-[#C49A6C] text-xs tracking-[0.12em] uppercase">Sweet Virginia</p>
             </div>
 
-            {/* seccion del usuario con el nombre y el rol, aplicando estilos para que se vea bien en la barra lateral
-            // y truncando el texto si es muy largo para evitar que se desborde */}
             {/* Usuario */}
             <div className="px-4 py-4 border-b border-[#3A2F26]">
                 <p className="text-[#F0E8DF] text-sm font-medium truncate">{usuario?.nombre}</p>
@@ -54,14 +50,13 @@ export default function Sidebar() {
                 </p>
             </div>
 
-            {/* seccion de navegacion con los links correspodientes al rol del usuario, aplicando estilos
-            // activos a los links segun la ruta actual, y un boton de logout al final */}
             {/* Navegación */}
             <nav className="flex flex-col gap-1 p-3 flex-1">
                 {nav.map((item) => (
                     <NavLink
                         key={item.path}
                         to={item.path}
+                        onClick={() => onClose?.()}
                         className={({ isActive }) =>
                             `px-3 py-2 rounded-lg text-sm transition-colors ${isActive
                                 ? "bg-[#C49A6C] text-[#1E1A17] font-medium"
@@ -74,7 +69,6 @@ export default function Sidebar() {
                 ))}
             </nav>
 
-            {/* seccion de logout con un boton que llama a la funcion de logout del contexto y redirige al login */}
             {/* Logout */}
             <div className="p-3 border-t border-[#3A2F26]">
                 <Button
@@ -86,6 +80,33 @@ export default function Sidebar() {
                 </Button>
             </div>
 
-        </aside>
+        </div>
+    )
+}
+
+// Componente Sidebar que muestra el logo, el nombre del usuario y los links de navegacion, con un diseño responsivo que muestra un menu desplegable en dispositivos moviles
+export default function Sidebar() {
+    const [open, setOpen] = useState(false)
+
+    return (
+        <>
+            {/* Desktop sidebar */}
+            <aside className="hidden md:flex w-56 min-h-screen flex-col">
+                <NavContent />
+            </aside>
+
+            {/* Mobile hamburger */}
+            <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-[#1E1A17] border-b border-[#3A2F26] px-4 py-3 flex items-center gap-3">
+                <Sheet open={open} onOpenChange={setOpen}>
+                    <SheetTrigger asChild>
+                        <button className="text-[#C49A6C] text-xl">☰</button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="p-0 w-56 bg-[#1E1A17] border-[#3A2F26]">
+                        <NavContent onClose={() => setOpen(false)} />
+                    </SheetContent>
+                </Sheet>
+                <p className="text-[#C49A6C] text-xs tracking-[0.12em] uppercase">Sweet Virginia</p>
+            </div>
+        </>
     )
 }

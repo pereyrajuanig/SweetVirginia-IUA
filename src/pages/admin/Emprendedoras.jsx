@@ -1,3 +1,119 @@
+// src/pages/admin/Emprendedoras.jsx - Pagina de administracion para gestionar las emprendedoras registradas en la plataforma, con funcionalidades para aprobar o rechazar solicitudes pendientes y visualizar el estado actual de cada emprendedora
+
+import { useState, useEffect } from "react"
+import { getEmprendedoras, cambiarEstadoEmprendedora } from "@/services/emprendedorasService"
+import { Button } from "@/components/ui/button"
+
+const badgeEstilo = {
+    activa: "bg-[#4CAF50] text-white",
+    pendiente: "bg-[#88A5C1] text-white",
+    suspendida: "bg-[#E53935] text-white",
+    baja: "bg-[#EEE4DC] text-[#7A6A5E]",
+}
+
 export default function Emprendedoras() {
-    return <div>Emprendedoras</div>
+    const [emprendedoras, setEmprendedoras] = useState([])
+
+    useEffect(() => {
+        getEmprendedoras().then(setEmprendedoras)
+    }, [])
+
+    async function handleDecision(id, decision) {
+        await cambiarEstadoEmprendedora(id, decision)
+        setEmprendedoras((prev) =>
+            prev.map((e) =>
+                e.id === id
+                    ? { ...e, estado: decision === "aprobada" ? "activa" : "suspendida" }
+                    : e
+            )
+        )
+    }
+
+    const pendientes = emprendedoras.filter((e) => e.estado === "pendiente")
+    const resto = emprendedoras.filter((e) => e.estado !== "pendiente")
+
+    return (
+        <div className="max-w-4xl mx-auto">
+
+            {/* Header */}
+            <div className="mb-6">
+                <h1 className="text-2xl font-semibold text-[#3D2B1F]">Emprendedoras</h1>
+                <p className="text-[#A08070] text-sm mt-1">{emprendedoras.length} registradas en la plataforma</p>
+            </div>
+
+            {/* Solicitudes pendientes */}
+            {pendientes.length > 0 && (
+                <div className="mb-6">
+                    <h2 className="text-sm font-medium text-[#A08070] uppercase tracking-wide mb-3">
+                        Solicitudes pendientes ({pendientes.length})
+                    </h2>
+                    <div className="flex flex-col gap-3">
+                        {pendientes.map((e) => (
+                            <div
+                                key={e.id}
+                                className="bg-[#FDF6F0] border border-[#C49A6C] rounded-xl p-5 flex items-center justify-between"
+                            >
+                                <div>
+                                    <p className="font-medium text-[#3D2B1F]">{e.nombre_negocio}</p>
+                                    <p className="text-sm text-[#A08070]">{e.usuario.nombre} · {e.usuario.telefono}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        size="sm"
+                                        onClick={() => handleDecision(e.id, "aprobada")}
+                                        className="bg-[#4CAF50] hover:bg-[#388E3C] text-white text-xs"
+                                    >
+                                        Aprobar
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleDecision(e.id, "rechazada")}
+                                        className="border-[#E53935] text-[#E53935] hover:bg-[#FFEBEE] text-xs"
+                                    >
+                                        Rechazar
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Todas las emprendedoras */}
+            <h2 className="text-sm font-medium text-[#A08070] uppercase tracking-wide mb-3">
+                Todas las emprendedoras
+            </h2>
+            <div className="bg-white rounded-xl border border-[#E8DDD6] overflow-hidden">
+                {resto.map((e, i) => (
+                    <div
+                        key={e.id}
+                        className={`flex items-center justify-between p-4 ${i !== resto.length - 1 ? "border-b border-[#E8DDD6]" : ""
+                            }`}
+                    >
+                        <div>
+                            <p className="font-medium text-[#3D2B1F]">{e.nombre_negocio}</p>
+                            <p className="text-sm text-[#A08070]">{e.usuario.nombre} · {e.usuario.telefono}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${badgeEstilo[e.estado]}`}>
+                                {e.estado}
+                            </span>
+                            {e.estado === "activa" && (
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleDecision(e.id, "rechazada")}
+                                    className="border-[#E8DDD6] text-[#7A6A5E] hover:bg-[#EEE4DC] text-xs"
+                                >
+                                    Suspender
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+        </div>
+    )
 }

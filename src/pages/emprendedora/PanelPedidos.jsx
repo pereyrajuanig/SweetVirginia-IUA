@@ -42,7 +42,7 @@ export default function PanelPedidos() {
     // un conjunto de botones para seleccionar el filtro, y una lista de tarjetas para cada pedido filtrado que muestra su informacion 
     // y un boton para avanzar su estado si es posible
     return (
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full max-w-4xl mx-auto">
 
             {/* Header */}
             <div className="mb-6">
