@@ -1,27 +1,81 @@
-// src/services/emprendedorasService.js - Servicio para manejar las solicitudes relacionadas con las emprendedoras, incluyendo obtener la lista de emprendedoras y cambiar su estado (aprobada/suspendida)
-
-import { emprendedorasMock } from "@/mocks/emprendedoras.mock"
-
-const USAR_MOCK = true
+import { supabase } from "@/lib/supabase"
 
 export async function getEmprendedoras() {
-    if (USAR_MOCK) {
-        await new Promise((resolve) => setTimeout(resolve, 500))
-        return emprendedorasMock
-    }
-    const res = await fetch("/api/v1/emprendedoras")
-    return res.json()
+  const { data, error } = await supabase
+    .from("emprendedoras")
+    .select("*")
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error al obtener emprendedoras:", error)
+    return []
+  }
+
+  return data
 }
 
-export async function cambiarEstadoEmprendedora(id, decision) {
-    if (USAR_MOCK) {
-        await new Promise((resolve) => setTimeout(resolve, 500))
-        return { id, estado: decision === "aprobada" ? "activa" : "suspendida" }
-    }
-    const res = await fetch(`/api/v1/emprendedoras/solicitud/${id}/decision`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decision }),
-    })
-    return res.json()
+export async function crearEmprendedora(emprendedora) {
+  // Primero creamos el usuario asociado
+  const { data: usuarioCreado, error: errorUsuario } = await supabase
+    .from("usuarios")
+    .insert([{
+      nombre: emprendedora.nombre_contacto,
+      telefono: emprendedora.telefono,
+      rol: "emprendedora",
+    }])
+    .select()
+
+  if (errorUsuario) {
+    console.error("Error al crear usuario:", errorUsuario)
+    throw errorUsuario
+  }
+
+  // Después creamos la emprendedora vinculada a ese usuario
+  const { data, error } = await supabase
+    .from("emprendedoras")
+    .insert([{
+      nombre_negocio: emprendedora.nombre_negocio,
+      descripcion: emprendedora.descripcion,
+      telefono: emprendedora.telefono,
+      estado: emprendedora.estado,
+      usuario_id: usuarioCreado[0].id,
+    }])
+    .select()
+
+  if (error) {
+    console.error("Error al crear emprendedora:", error)
+    throw error
+  }
+
+  return data[0]
+}
+
+export async function cambiarEstadoEmprendedora(id, nuevoEstado) {
+  const { data, error } = await supabase
+    .from("emprendedoras")
+    .update({ estado: nuevoEstado })
+    .eq("id", id)
+    .select()
+
+  if (error) {
+    console.error("Error al cambiar estado:", error)
+    throw error
+  }
+
+  return data[0]
+}
+
+export async function getEmprendedoraPorTelefono(telefono) {
+  const { data, error } = await supabase
+    .from("emprendedoras")
+    .select("*")
+    .eq("telefono", telefono)
+    .single()
+
+  if (error) {
+    console.error("Error al buscar emprendedora:", error)
+    return null
+  }
+
+  return data
 }

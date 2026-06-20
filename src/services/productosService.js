@@ -1,29 +1,44 @@
-// productosService.js - Servicio para manejar las operaciones relacionadas con los productos, con soporte para mock y API real
+import { supabase } from "@/lib/supabase"
 
-import { productosMock } from "@/mocks/productos.mock"
-
-const USAR_MOCK = true
-
-// funcion para obtener los productos, usando el mock o haciendo una peticion a la API real
 export async function getProductos() {
-    if (USAR_MOCK) {
-        await new Promise((resolve) => setTimeout(resolve, 500))
-        return productosMock
-    }
-    const res = await fetch("/api/v1/productos")
-    return res.json()
+  const { data, error } = await supabase
+    .from("productos")
+    .select("*")
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error al obtener productos:", error)
+    return []
+  }
+
+  return data
 }
 
-// funcion para cambiar la disponibilidad de un producto, usando el mock o haciendo una peticion a la API real
+export async function crearProducto(producto) {
+  const { data, error } = await supabase
+    .from("productos")
+    .insert([producto])
+    .select()
+
+  if (error) {
+    console.error("Error al crear producto:", error)
+    throw error
+  }
+
+  return data[0]
+}
+
 export async function toggleDisponibilidad(id, disponible) {
-    if (USAR_MOCK) {
-        await new Promise((resolve) => setTimeout(resolve, 500))
-        return { id, disponible }
-    }
-    const res = await fetch(`/api/v1/productos/${id}/disponibilidad`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ disponible }),
-    })
-    return res.json()
+  const { data, error } = await supabase
+    .from("productos")
+    .update({ disponible })
+    .eq("id", id)
+    .select()
+
+  if (error) {
+    console.error("Error al actualizar disponibilidad:", error)
+    throw error
+  }
+
+  return data[0]
 }
